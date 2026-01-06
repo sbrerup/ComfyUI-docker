@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  comfyui:
+    build: .
+    container_name: comfyui
+    restart: unless-stopped
+    ports:
+      - "8188:8188"
+    volumes:
+      - ./output:/app/output
+      - ./input:/app/input
+      - ./models:/app/models
+      - ./custom_nodes:/app/custom_nodes
+      - ./user:/app/user
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    command: ["python", "main.py", "--listen", "0.0.0.0", "--port", "8188", "--preview-method", "auto", "--force-fp32", "--fp32-vae"]

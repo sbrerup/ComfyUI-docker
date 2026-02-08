@@ -2,17 +2,15 @@ version: '3.8'
 
 services:
   comfyui:
-    build: .
-    container_name: comfyui
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: comfyui-1080ti
     restart: unless-stopped
     ports:
       - "8188:8188"
-    volumes:
-      - ./output:/app/output
-      - ./input:/app/input
-      - ./models:/app/models
-      - ./custom_nodes:/app/custom_nodes
-      - ./user:/app/user
+    
+    # This section is critical for the GTX 1080 Ti to be seen by the container
     deploy:
       resources:
         reservations:
@@ -20,4 +18,19 @@ services:
             - driver: nvidia
               count: all
               capabilities: [gpu]
-    command: ["python", "main.py", "--listen", "0.0.0.0", "--port", "8188", "--preview-method", "auto", "--force-fp32", "--fp32-vae"]
+
+    # Mounts specific folders so your models and outputs persist locally
+    volumes:
+      # Map your local 'models' folder to the container
+      - ./models:/app/models
+      # Map your local 'output' folder to save images to your disk
+      - ./output:/app/output
+      # Map your local 'input' folder for image-to-image workflows
+      - ./input:/app/input
+      # Optional: Persist custom nodes if you install them via the manager
+      - ./custom_nodes:/app/custom_nodes
+
+    # Environment variables to keep the container clean
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - CLI_ARGS=--listen 0.0.0.0 --port 8188 --preview-method auto --cuda-malloc
